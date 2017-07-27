@@ -1,13 +1,21 @@
 import sys
+from typing import Dict
 
 import numpy as np
 
 from charge_method import ChargeMethodSkeleton
+from options import CommandLineOption
 from parameters import ParameterError
+from structures.molecule import Molecule
 
 
 class ChargeMethod(ChargeMethodSkeleton):
     NAME = 'eem'
+    FULL_NAME = 'Electronegativity Equalization Method'
+    PUBLICATION = '10.1021/ja00275a013'
+
+    OPTIONS = [
+        CommandLineOption(name='par_file', help='File with EEM parameters', type=str, default='../data/eem.json')]
 
     COMMON_PARAMETERS = ['kappa']
     ATOM_PARAMETERS = ['A', 'B']
@@ -15,11 +23,10 @@ class ChargeMethod(ChargeMethodSkeleton):
     def __init__(self):
         super().__init__()
 
-    def initialize(self):
+    def initialize(self, options: Dict):
+        self.parameters.load_from_file(options['par_file'])
 
-        self.parameters.load_from_file('../data/eem.json')
-
-    def calculate_charges(self, molecule):
+    def calculate_charges(self, molecule: Molecule):
 
         n = len(molecule.atoms)
         matrix = np.empty((n + 1, n + 1), dtype=np.float32)
