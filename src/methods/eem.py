@@ -2,11 +2,11 @@ import sys
 
 import numpy as np
 
-from charge_method import ChargeMethod
+from charge_method import ChargeMethodSkeleton
 from parameters import ParameterError
 
 
-class EEMChargeMethod(ChargeMethod):
+class ChargeMethod(ChargeMethodSkeleton):
     NAME = 'eem'
 
     COMMON_PARAMETERS = ['kappa']

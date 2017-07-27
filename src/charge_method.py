@@ -6,7 +6,7 @@ from parameters import Parameters
 from structures.molecule import Molecule
 
 
-class ChargeMethod(abc.ABC):
+class ChargeMethodSkeleton(abc.ABC):
     NAME = '<name>'
     PUBLICATION = '<doi>'
 

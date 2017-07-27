@@ -1,9 +1,11 @@
 import numpy as np
 
-from charge_method import ChargeMethod
+from charge_method import ChargeMethodSkeleton
 
 
-class TestChargeMethod(ChargeMethod):
+class ChargeMethod(ChargeMethodSkeleton):
+    NAME = 'test'
+
     COMMON_PARAMETERS = 'kappa'.split()
     ATOM_PARAMETERS = 'A B'.split()
 

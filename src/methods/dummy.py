@@ -1,7 +1,9 @@
-from charge_method import ChargeMethod
+from charge_method import ChargeMethodSkeleton
 
 
-class DummyChargeMethod(ChargeMethod):
+class ChargeMethod(ChargeMethodSkeleton):
+    NAME = 'dummy'
+
     def initialize(self):
         pass
 
