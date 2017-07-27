@@ -1,3 +1,4 @@
+import sys
 from collections import Counter
 
 from parameters import Parameters, ParameterError
@@ -15,24 +16,31 @@ class MoleculeSet:
     def __getitem__(self, item):
         return self._molecules[item]
 
+    def __str__(self):
+        return 'MoleculeSet: {} molecules'.format(len(self))
+
     @classmethod
-    def load_from_file(cls, filename):
+    def load_from_file(cls, filename: str):
         molecules = []
         molecule_names = set()
-        with open(filename) as f:
-            mol_record = []
-            for line in f:
-                if line.strip() == '$$$$':
-                    molecule = Molecule.create_from_mol(mol_record)
-                    if molecule.name in molecule_names:
-                        raise RuntimeError('Two molecules with the same name! ({})'.format(molecule.name))
-                    else:
-                        molecule_names.add(molecule.name)
-                    molecules.append(molecule)
-                    mol_record = []
-                    continue
+        try:
+            with open(filename) as f:
+                mol_record = []
+                for line in f:
+                    if line.strip() == '$$$$':
+                        molecule = Molecule.create_from_mol(mol_record)
+                        if molecule.name in molecule_names:
+                            raise RuntimeError('Two molecules with the same name! ({})'.format(molecule.name))
+                        else:
+                            molecule_names.add(molecule.name)
+                        molecules.append(molecule)
+                        mol_record = []
+                        continue
 
-                mol_record.append(line)
+                    mol_record.append(line)
+        except IOError:
+            print('Cannot open SDF file: {}'.format(filename), file=sys.stderr)
+            sys.exit(1)
 
         return MoleculeSet(molecules)
 

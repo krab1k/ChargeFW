@@ -1,4 +1,5 @@
 import json
+import sys
 from typing import Dict
 
 import numpy as np
@@ -25,8 +26,12 @@ class Charges:
 
     @classmethod
     def load_from_file(cls, filename: str):
-        with open(filename, 'r') as f:
-            data = json.load(f)
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+        except IOError:
+            print('Cannot load charges from file: {}'.format(filename), file=sys.stderr)
+            sys.exit(1)
 
         for key, value in data.items():
             data[key] = np.array(value, dtype=np.float32)
@@ -38,5 +43,9 @@ class Charges:
         for key, value in self._data.items():
             data_copy[key] = value.tolist()
 
-        with open(filename, 'w') as f:
-            json.dump(data_copy, f)
+        try:
+            with open(filename, 'w') as f:
+                json.dump(data_copy, f)
+        except IOError:
+            print('Cannot store charges to file: {}'.format(filename), file=sys.stderr)
+            sys.exit(1)

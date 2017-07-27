@@ -1,14 +1,8 @@
 import abc
+from typing import Dict
 
 from structures.atom import Atom
 from structures.molecule import Molecule
-
-classifiers = {}
-
-
-def atom_classifier(c):
-    classifiers[c.string] = c
-    return c
 
 
 class Classifier(abc.ABC):
@@ -22,6 +16,14 @@ class Classifier(abc.ABC):
     @classmethod
     def check(cls, molecule: Molecule, atom: Atom, atom_type):
         return cls.get_type(molecule, atom) == atom_type
+
+
+classifiers: Dict[str, Classifier] = {}
+
+
+def atom_classifier(c: Classifier):
+    classifiers[c.string] = c
+    return c
 
 
 @atom_classifier

@@ -1,4 +1,5 @@
 import json
+import sys
 from collections import namedtuple, OrderedDict
 from typing import List
 
@@ -30,15 +31,20 @@ class Parameters:
         return self._atom
 
     def load_from_file(self, filename: str):
-        with open(filename, 'r') as f:
-            data = json.load(f)
-            for parameter in data['common']:
-                if parameter not in self.common.parameter_names:
-                    raise ParameterError('Parameter with name {} not defined'.format(parameter))
-                self.common[parameter] = float(data['common'][parameter])
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+        except IOError:
+            print('Cannot load parameters from file: {}'.format(filename), file=sys.stderr)
+            sys.exit(1)
 
-            for parameter in data['atom']:
-                self.atom.add_parameter(self.atom.type(*parameter))
+        for parameter in data['common']:
+            if parameter not in self.common.parameter_names:
+                raise ParameterError('Parameter with name {} not defined'.format(parameter))
+            self.common[parameter] = float(data['common'][parameter])
+
+        for parameter in data['atom']:
+            self.atom.add_parameter(self.atom.type(*parameter))
 
     def pack_values(self) -> np.ndarray:
         size = len(self.common) + len(self.atom) * len(self.atom.parameter_names)
