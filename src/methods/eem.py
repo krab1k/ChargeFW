@@ -5,7 +5,6 @@ import numpy as np
 
 from charge_method import ChargeMethodSkeleton
 from options import CommandLineOption
-from parameters import ParameterError
 from structures.molecule import Molecule
 
 
@@ -32,31 +31,17 @@ class ChargeMethod(ChargeMethodSkeleton):
         matrix = np.empty((n + 1, n + 1), dtype=np.float32)
         vector = np.empty(n + 1, dtype=np.float32)
 
-        # Fill rhs vector
+        with np.errstate(divide='ignore'):
+            matrix[:n, :n] = self.parameters.common['kappa'] / molecule.distance_matrix
+
         for i, atom_i in enumerate(molecule.atoms):
-            try:
-                vector[i] = - self.parameters.atom['A'](atom_i)
-            except ParameterError as error:
-                print(error, file=sys.stderr)
-                return None
-
-        # Total charge
-        vector[n] = molecule.formal_charge
-
-        # Fill the EEM matrix
-        for atom_i in molecule.atoms:
-            i = atom_i.index
-            for atom_j in molecule.atoms[i:]:
-                j = atom_j.index
-                if i == j:
-                    # No ValueError exception can occur here since the previous try would catch it
-                    matrix[i, i] = self.parameters.atom['B'](atom_i)
-                else:
-                    matrix[i, j] = matrix[j, i] = self.parameters.common['kappa'] / molecule.distance_matrix[i, j]
+            matrix[i, i] = self.parameters.atom['B'](atom_i)
+            vector[i] = - self.parameters.atom['A'](atom_i)
 
         matrix[n, :] = 1.0
         matrix[:, n] = 1.0
         matrix[n, n] = 0.0
+        vector[n] = molecule.formal_charge
 
         try:
             return np.linalg.solve(matrix, vector)[:-1]
