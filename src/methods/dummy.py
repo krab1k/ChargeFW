@@ -1,3 +1,5 @@
+import numpy as np
+
 from charge_method import ChargeMethodSkeleton
 
 
@@ -9,4 +11,4 @@ class ChargeMethod(ChargeMethodSkeleton):
         pass
 
     def calculate_charges(self, molecule):
-        return [0.0 for _ in molecule]
+        return np.fromiter((0.0 for _ in molecule), dtype=np.float32, count=len(molecule))
