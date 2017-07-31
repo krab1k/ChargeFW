@@ -35,7 +35,7 @@ class ChargeMethod(ChargeMethodSkeleton):
         # Fill rhs vector
         for i, atom_i in enumerate(molecule.atoms):
             try:
-                vector[i] = - self.parameters.atom['A'](molecule, atom_i)
+                vector[i] = - self.parameters.atom['A'](atom_i)
             except ParameterError as error:
                 print(error, file=sys.stderr)
                 return None
@@ -50,7 +50,7 @@ class ChargeMethod(ChargeMethodSkeleton):
                 j = atom_j.index
                 if i == j:
                     # No ValueError exception can occur here since the previous try would catch it
-                    matrix[i, i] = self.parameters.atom['B'](molecule, atom_i)
+                    matrix[i, i] = self.parameters.atom['B'](atom_i)
                 else:
                     matrix[i, j] = matrix[j, i] = self.parameters.common['kappa'] / molecule.distance_matrix[i, j]
 

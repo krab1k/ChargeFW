@@ -5,8 +5,6 @@ from typing import List
 
 import numpy as np
 
-from classifier import classifiers
-
 
 class ParameterError(Exception):
     pass
@@ -15,10 +13,8 @@ class ParameterError(Exception):
 class Parameters:
     def __init__(self, common_parameters: List[str], atom_parameters: List[str]):
         try:
-            self._common = CommonParameters(namedtuple('CommonParamater', 'name value'), common_parameters)
-            self._atom = AtomParameters(
-                namedtuple('AtomParameter', 'element classifier atom_type ' + ' '.join(atom_parameters)),
-                atom_parameters)
+            self._common = CommonParameters(common_parameters)
+            self._atom = AtomParameters(atom_parameters)
         except ValueError:
             raise ParameterError('Duplicate parameter names')
 
@@ -44,7 +40,7 @@ class Parameters:
             self.common[parameter] = float(data['common'][parameter])
 
         for parameter in data['atom']:
-            self.atom.add_parameter(self.atom.type(*parameter))
+            self.atom.add_parameter(parameter[0], parameter[1], parameter[2], parameter[3:])
 
     def pack_values(self) -> np.ndarray:
         size = len(self.common) + len(self.atom) * len(self.atom.parameter_names)
@@ -62,29 +58,23 @@ class Parameters:
         return packed
 
     def load_packed(self, packed: np.ndarray):
-
         assert len(packed) == len(self.common) + len(self.atom) * len(self.atom.parameter_names)
 
         start = 0
         for i, key in enumerate(self.common):
             self.common[key] = packed[i]
-            start += 1
+            start = i
 
-        values_count = len(self.atom.parameter_names)
-        for i, p in enumerate(self.atom):
-            values = packed[start + i * values_count: start + (i + 1) * values_count]
-            self.atom.update_values(i, values)
+        self.atom.update_values(packed[start:])
 
 
 class CommonParameters:
-    def __init__(self, parameter_type, parameter_names):
-        self._type = parameter_type
+    def __init__(self, parameter_names):
         self._parameter_names = parameter_names
         self._parameters = OrderedDict()
-        self.items = self._parameters.items
 
     def __iter__(self):
-        return iter(self._parameters.keys())
+        return iter(self._parameters)
 
     def __getitem__(self, item):
         try:
@@ -107,10 +97,9 @@ class CommonParameters:
 
 
 class AtomParameters:
-    def __init__(self, parameter_type, parameter_names):
-        self._type: namedtuple = parameter_type
-        self._parameter_names: List[str] = parameter_names
-        self._parameters: List[parameter_type] = []
+    def __init__(self, parameter_names):
+        self._type: namedtuple = namedtuple('AtomParameter', ' '.join(parameter_names))
+        self._parameters: OrderedDict[tuple, tuple] = OrderedDict()
 
     def __iter__(self):
         return iter(self._parameters)
@@ -118,44 +107,29 @@ class AtomParameters:
     def __len__(self):
         return len(self._parameters)
 
-    def add_parameter(self, parameter):
-        if parameter in self:
-            raise ParameterError('Parameter already defined')
-
-        self._parameters.append(parameter)
-
-    def update_values(self, parameter_idx, values):
-        header = self._parameters[parameter_idx][:3]
-        self._parameters[parameter_idx] = self.type(*header, *values)
-
     def __getitem__(self, item):
-        def f(molecule, atom):
-            for parameter in self._parameters:
-                if self.matches(parameter, molecule, atom):
-                    try:
-                        return getattr(parameter, item)
-                    except AttributeError:
-                        raise ParameterError('No parameter {} defined'.format(item))
-            else:
+        def f(atom):
+            try:
+                return getattr(self._parameters[atom.atom_type], item)
+            except AttributeError:
+                raise ParameterError('No parameter {} defined'.format(item))
+            except KeyError:
                 raise ParameterError('No suitable parameter found for {}'.format(atom))
 
         return f
 
-    @staticmethod
-    def matches(parameter, molecule, atom):
-        if parameter.element != atom.element.symbol:
-            return False
-        try:
-            classifier = classifiers[parameter.classifier]
-        except KeyError:
-            raise ParameterError('No such classifier: {}'.format(parameter.classifier))
+    def add_parameter(self, element: str, classifier: str, atom_type: str, parameters):
+        if parameters in self:
+            raise ParameterError('Parameter already defined')
 
-        return classifier.check(molecule, atom, parameter.atom_type)
+        self._parameters[(element, classifier, atom_type)] = self._type(*parameters)
 
-    @property
-    def type(self):
-        return self._type
+    def update_values(self, values):
+        values_count = len(self.parameter_names)
+        for i, key in enumerate(self._parameters):
+            self._parameters[key] = self._type(*values[i * values_count: (i + 1) * values_count])
 
     @property
     def parameter_names(self):
-        return self._parameter_names
+        # noinspection PyProtectedMember
+        return self._type._fields

@@ -1,6 +1,7 @@
 import abc
-from typing import Dict
+from typing import Dict, Tuple
 
+from parameters import ParameterError, AtomParameters
 from structures.atom import Atom
 from structures.molecule import Molecule
 
@@ -12,10 +13,6 @@ class Classifier(abc.ABC):
     @abc.abstractmethod
     def get_type(cls, molecule: Molecule, atom: Atom):
         pass
-
-    @classmethod
-    def check(cls, molecule: Molecule, atom: Atom, atom_type):
-        return cls.get_type(molecule, atom) == atom_type
 
 
 classifiers: Dict[str, Classifier] = {}
@@ -31,8 +28,8 @@ class Plain(Classifier):
     string: str = 'plain'
 
     @classmethod
-    def get_type(cls, molecule: Molecule, atom: Atom) -> str:
-        return '*'
+    def get_type(cls, molecule: Molecule, atom: Atom) -> Tuple[str, str]:
+        return cls.string, '*'
 
 
 @atom_classifier
@@ -40,5 +37,23 @@ class HBO(Classifier):
     string: str = 'hbo'
 
     @classmethod
-    def get_type(cls, molecule: Molecule, atom: Atom) -> int:
-        return molecule.highest_bond_order(atom)
+    def get_type(cls, molecule: Molecule, atom: Atom) -> Tuple[str, int]:
+        return cls.string, molecule.highest_bond_order(atom)
+
+
+class ParametersClassifier(Classifier):
+    string: str = 'parameters'
+
+    def __init__(self, parameters: AtomParameters):
+        self._parameters = parameters
+
+    def get_type(self, molecule: Molecule, atom: Atom):
+        for element, classifier, atom_type in self._parameters:
+            if element != atom.element.symbol:
+                continue
+
+            if classifiers[classifier].get_type(molecule, atom)[1] == atom_type:
+                return classifier, atom_type
+
+        else:
+            raise ParameterError('No parameter found for atom {}'.format(atom.element.symbol))

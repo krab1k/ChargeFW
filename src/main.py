@@ -3,7 +3,7 @@
 import importlib
 
 from charges import Charges
-from classifier import classifiers
+from classifier import classifiers, ParametersClassifier
 from options import parse_arguments
 from structures.molecule_set import MoleculeSet
 
@@ -13,7 +13,8 @@ def main():
 
     if global_options['command'] == 'info':
         molecules = MoleculeSet.load_from_file(global_options['sdf_file'])
-        molecules.stats(classifiers[global_options['classifier']])
+        molecules.assign_atom_types(classifiers[global_options['classifier']])
+        molecules.stats()
 
     elif global_options['command'] == 'charges':
         molecules = MoleculeSet.load_from_file(global_options['sdf_file'])
@@ -21,6 +22,9 @@ def main():
         m = importlib.import_module('methods.' + global_options['method'])
         method = m.ChargeMethod()
         method.initialize(method_options)
+
+        pc = ParametersClassifier(method.parameters.atom)
+        molecules.assign_atom_types(pc)
 
         charges = Charges()
         for molecule in molecules:
