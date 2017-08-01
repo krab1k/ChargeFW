@@ -1,5 +1,5 @@
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from typing import List
 
 from classifier import Classifier, classifiers
@@ -10,6 +10,7 @@ from structures.molecule import Molecule
 class MoleculeSet:
     def __init__(self, molecules):
         self._molecules: List[Molecule] = list(molecules)
+        self._atom_types: defaultdict = defaultdict(list)
 
     def __len__(self):
         return len(self._molecules)
@@ -66,6 +67,12 @@ class MoleculeSet:
             print('{:>3s} {:>10s} {:>9d} {:>13d}'.format(element, at, atom_types[c], atom_types_in_molecules[c]))
 
     def assign_atom_types(self, classifier: Classifier):
-        for molecule in self:
-            for atom in molecule:
+        self._atom_types.clear()
+        for i, molecule in enumerate(self):
+            for j, atom in enumerate(molecule):
                 atom.atom_type = atom.element.symbol, *classifier.get_type(molecule, atom)
+                self._atom_types[atom.atom_type].append((i, j))
+
+    @property
+    def atom_types(self):
+        return self._atom_types

@@ -30,9 +30,33 @@ def calculate_all_total(ref_charges: Charges, charges: Charges) -> Tuple[float, 
     return total_rmsd / n, total_pearson2 / n, total_avg_diff / n, total_max_diff / n
 
 
-def calculate_all_per_atom_type(molecules: MoleculeSet, ref_charges: Charges, charges: Charges) -> float:
-    pass
+def calculate_all_per_atom_type(molecules: MoleculeSet, ref_charges: Charges, charges: Charges) -> dict:
+    results = dict()
+
+    for atom_type in molecules.atom_types:
+        indices = molecules.atom_types[atom_type]
+        n = len(indices)
+        x = np.empty(n, dtype=np.float32)
+        y = np.empty(n, dtype=np.float32)
+
+        for idx, i, j in enumerate(indices):
+            name = molecules[i].name
+            x[idx] = ref_charges[name][j]
+            y[idx] = charges[name][j]
+
+        abs_diff = np.abs(x - y)
+        rmsd = np.sqrt(np.mean(np.square(abs_diff)))
+        pearson2 = np.corrcoef(x, y)[1, 0] ** 2
+        avg_diff = np.mean(abs_diff)
+        max_diff = np.max(abs_diff)
+
+        results[atom_type] = rmsd, pearson2, avg_diff, max_diff
+
+    return results
 
 
 def calculate_statistics(molecules: MoleculeSet, ref_charges: Charges, charges: Charges):
-    print(calculate_all_total(ref_charges, charges))
+    rmsd, pearson2, avg_diff, max_diff = calculate_all_total(ref_charges, charges)
+    per_atom_type_results = calculate_all_per_atom_type(molecules, ref_charges, charges)
+
+    return rmsd
