@@ -22,6 +22,7 @@ def parse_arguments():
     info_parser.add_argument('sdf_file', help='SDF file')
 
     charges_parser = subparsers.add_parser('charges', help='Calculate charges')
+    parameterization_parser = subparsers.add_parser('parameters', help='Parameterize method')
 
     method_subparsers = charges_parser.add_subparsers(dest='method')
     for method in get_charge_methods():
@@ -36,8 +37,9 @@ def parse_arguments():
             method_parser.add_argument('--' + option.name, dest='method_' + option.name, metavar=option.name.upper(),
                                        help=option.help, type=option.type, default=option.default)
 
-    parameterization_parser = subparsers.add_parser('parameterize', help='Parameterize method')
     parameterization_parser.add_argument('method', choices=get_charge_methods(), help='Charge calculation method')
+    parameterization_parser.add_argument('sdf_file', help='SDF file')
+    parameterization_parser.add_argument('charge_file', help='File with reference charges')
 
     args = parser.parse_args()
 

@@ -1,4 +1,3 @@
-import sys
 from typing import Dict
 
 import numpy as np
@@ -46,5 +45,4 @@ class ChargeMethod(ChargeMethodSkeleton):
         try:
             return np.linalg.solve(matrix, vector)[:-1]
         except np.linalg.LinAlgError:
-            print('Cannot compute charges by EEM', file=sys.stderr)
-            return None
+            return np.fromiter((np.nan for _ in range(len(molecule))), dtype=np.float32, count=len(molecule))

@@ -42,6 +42,13 @@ class Parameters:
         for parameter in data['atom']:
             self.atom.add_parameter(parameter[0], parameter[1], parameter[2], parameter[3:])
 
+    def init_from_set(self, molecules):
+        for name in self.common.parameter_names:
+            self.common[name] = 0.0
+
+        for element, classifier, atom_type in molecules.atom_types:
+            self.atom.add_parameter(element, classifier, atom_type, [0.0] * len(self.atom.parameter_names))
+
     def pack_values(self) -> np.ndarray:
         size = len(self.common) + len(self.atom) * len(self.atom.parameter_names)
         packed = np.empty(size, dtype=np.float32)
@@ -66,6 +73,15 @@ class Parameters:
             start = i
 
         self.atom.update_values(packed[start:])
+
+    def print_parameters(self):
+        print('Common parameters:')
+        for parameter in self.common:
+            print('{}: {}'.format(parameter, self.common[parameter]))
+
+        print('Atom parameters:')
+        for parameter in self.atom:
+            print('{}: {}'.format(parameter, self.atom.parameter_values(parameter)))
 
 
 class CommonParameters:
@@ -128,6 +144,9 @@ class AtomParameters:
         values_count = len(self.parameter_names)
         for i, key in enumerate(self._parameters):
             self._parameters[key] = self._type(*values[i * values_count: (i + 1) * values_count])
+
+    def parameter_values(self, parameter):
+        return self._parameters[parameter]
 
     @property
     def parameter_names(self):
