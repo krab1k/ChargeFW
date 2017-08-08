@@ -1,7 +1,7 @@
 import json
 import sys
 from collections import namedtuple, OrderedDict
-from typing import List
+from typing import List, Tuple, Dict
 
 import numpy as np
 
@@ -18,6 +18,9 @@ class Parameters:
         except ValueError:
             raise ParameterError('Duplicate parameter names')
 
+        self._common_ranges: Dict[str, Tuple[float, float]] = None
+        self._atom_ranges: Dict[str, Tuple[float, float]] = None
+
     @property
     def common(self):
         return self._common
@@ -25,6 +28,10 @@ class Parameters:
     @property
     def atom(self):
         return self._atom
+
+    @property
+    def size(self):
+        return len(self.common) + len(self.atom) * len(self.atom.parameter_names)
 
     def load_from_file(self, filename: str):
         try:
@@ -49,9 +56,28 @@ class Parameters:
         for element, classifier, atom_type in molecules.atom_types:
             self.atom.add_parameter(element, classifier, atom_type, [0.0] * len(self.atom.parameter_names))
 
+    def set_random_values(self):
+        if self._atom_ranges is None or self._common_ranges is None:
+            self.load_packed(np.random.rand(self.size))
+        else:
+            for parameter in self.common:
+                self.common[parameter] = np.random.uniform(*self._common_ranges[parameter])
+
+            packed = np.empty(len(self.atom) * len(self.atom.parameter_names), dtype=np.float32)
+            for i, parameter_name in enumerate(self.atom.parameter_names):
+                low, high = self._atom_ranges[parameter_name]
+                packed[i::len(self.atom.parameter_names)] = np.random.uniform(low, high, len(self.atom))
+
+            self.atom.update_values(packed)
+
+    def set_ranges(self, common_ranges: Dict[str, Tuple[float, float]], atom_ranges: Dict[str, Tuple[float, float]]):
+        assert common_ranges.keys() == set(self.common.parameter_names)
+        assert atom_ranges.keys() == set(self.atom.parameter_names)
+        self._common_ranges = common_ranges
+        self._atom_ranges = atom_ranges
+
     def pack_values(self) -> np.ndarray:
-        size = len(self.common) + len(self.atom) * len(self.atom.parameter_names)
-        packed = np.empty(size, dtype=np.float32)
+        packed = np.empty(self.size, dtype=np.float32)
         idx = 0
         for parameter in self.common:
             packed[idx] = self.common[parameter]
@@ -65,7 +91,7 @@ class Parameters:
         return packed
 
     def load_packed(self, packed: np.ndarray):
-        assert len(packed) == len(self.common) + len(self.atom) * len(self.atom.parameter_names)
+        assert len(packed) == self.size
 
         start = 0
         for i, key in enumerate(self.common):
@@ -115,7 +141,7 @@ class CommonParameters:
 class AtomParameters:
     def __init__(self, parameter_names):
         self._type: namedtuple = namedtuple('AtomParameter', ' '.join(parameter_names))
-        self._parameters: OrderedDict[tuple, tuple] = OrderedDict()
+        self._parameters: OrderedDict[Tuple[str, str, str], namedtuple] = OrderedDict()
 
     def __iter__(self):
         return iter(self._parameters)
@@ -140,12 +166,12 @@ class AtomParameters:
 
         self._parameters[(element, classifier, atom_type)] = self._type(*parameters)
 
-    def update_values(self, values):
+    def update_values(self, values: np.ndarray):
         values_count = len(self.parameter_names)
         for i, key in enumerate(self._parameters):
             self._parameters[key] = self._type(*values[i * values_count: (i + 1) * values_count])
 
-    def parameter_values(self, parameter):
+    def parameter_values(self, parameter: Tuple[str, str, str]):
         return self._parameters[parameter]
 
     @property

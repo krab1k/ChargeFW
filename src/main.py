@@ -29,7 +29,7 @@ def main():
         pc = ParametersClassifier(method.parameters.atom)
         molecules.assign_atom_types(pc)
 
-        charges = Charges()
+        charges: Charges = Charges()
         for molecule in molecules:
             charges[molecule.name] = method.calculate_charges(molecule)
 
@@ -43,11 +43,10 @@ def main():
         ref_charges = Charges.load_from_file(global_options['charge_file'])
         method = m.ChargeMethod()
         method.parameters.init_from_set(molecules)
-        method.parameters.print_parameters()
+        method.parameters.set_ranges({'kappa': (0.0, 1)}, {'A': (1.6, 3.2), 'B': (0, 1.8)})
         parameterize(molecules, method, ref_charges)
-        method.parameters.print_parameters()
 
-        new_charges = Charges()
+        new_charges: Charges = Charges()
         for molecule in molecules:
             new_charges[molecule.name] = method.calculate_charges(molecule)
 
