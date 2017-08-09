@@ -11,9 +11,10 @@ Bond = namedtuple('Bond', 'atom1 atom2 order'.split())
 
 
 class Molecule:
-    def __init__(self, name: str, atoms: List[Atom], bonds: List[Bond]):
+    def __init__(self, name: str, atoms: List[Atom], bonds: List[Bond]) -> None:
         self._name: str = name
         self._atoms: List[Atom] = atoms
+        self._formal_charge: int = sum(atom.formal_charge for atom in self.atoms)
 
         n = len(self)
         self._connectivity_matrix = np.zeros((n, n), dtype=np.int8)
@@ -63,7 +64,7 @@ class Molecule:
 
     @property
     def formal_charge(self) -> int:
-        return sum(atom.formal_charge for atom in self.atoms)
+        return self._formal_charge
 
     def highest_bond_order(self, atom) -> int:
         return self._connectivity_matrix[atom.index].max()

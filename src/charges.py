@@ -6,7 +6,7 @@ import numpy as np
 
 
 class Charges:
-    def __init__(self, data: Dict[str, np.ndarray]=None):
+    def __init__(self, data: Dict[str, np.ndarray]=None) -> None:
         if data is None:
             self._data = {}
         else:

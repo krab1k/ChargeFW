@@ -6,7 +6,7 @@ from pte import Element
 class Atom:
     __slots__ = ['_element', '_index', '_coordinates', '_formal_charge', '_atom_type']
 
-    def __init__(self, element, index, coordinates, charge):
+    def __init__(self, element: Element, index: int, coordinates: np.ndarray, charge: int) -> None:
         self._element: Element = element
         self._index: int = index
         self._coordinates: np.array = np.array(coordinates, dtype=np.float32)

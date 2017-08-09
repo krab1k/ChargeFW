@@ -8,7 +8,7 @@ from structures.molecule import Molecule
 
 
 class MoleculeSet:
-    def __init__(self, molecules):
+    def __init__(self, molecules) -> None:
         self._molecules: List[Molecule] = list(molecules)
         self._atom_types: defaultdict = defaultdict(list)
 
