@@ -17,10 +17,14 @@ class Molecule:
         self._formal_charge: int = sum(atom.formal_charge for atom in self.atoms)
 
         n = len(self)
-        self._connectivity_matrix = np.zeros((n, n), dtype=np.int8)
+        self._hbo: np.ndarray = np.zeros(n, dtype=np.int8)
+        self._connectivity_matrix: np.ndarray = np.zeros((n, n), dtype=np.int8)
         for atom1_idx, atom2_idx, order in bonds:
+            order = np.int8(order)
             self._connectivity_matrix[atom1_idx, atom2_idx] = order
             self._connectivity_matrix[atom2_idx, atom1_idx] = order
+            self._hbo[atom1_idx] = self._hbo[atom1_idx] if self._hbo[atom1_idx] > order else order
+            self._hbo[atom2_idx] = self._hbo[atom2_idx] if self._hbo[atom2_idx] > order else order
 
         atom_coords = np.array([atom.coordinates for atom in self.atoms])
         self._distance_matrix: np.ndarray = scipy.spatial.distance.cdist(atom_coords, atom_coords)
@@ -66,8 +70,8 @@ class Molecule:
     def formal_charge(self) -> int:
         return self._formal_charge
 
-    def highest_bond_order(self, atom) -> int:
-        return self._connectivity_matrix[atom.index].max()
+    def highest_bond_order(self, atom) -> np.int:
+        return int(self._hbo[atom.index])
 
     def bonded_atoms(self, atom: Atom) -> Generator[Atom, None, None]:
         line = self._connectivity_matrix[atom.index]
@@ -99,9 +103,8 @@ class Molecule:
             symbols = []
             coordinates = []
             for i in range(4, 4 + atom_count):
-                types = (float, float, float, str)
-                data_ranges = ((0, 10), (10, 20), (20, 30), (30, 33))
-                *coords, symbol = (t(data[i][slice(*d)]) for t, d in zip(types, data_ranges))
+                line = data[i]
+                *coords, symbol = float(line[0:10]), float(line[10:20]), float(line[20:30]), str(line[30:33])
                 symbols.append(symbol.strip())
                 coordinates.append(coords)
 
@@ -120,7 +123,8 @@ class Molecule:
 
             bond_list = []
             for i in range(4 + atom_count, 4 + atom_count + bond_count):
-                atom1_idx, atom2_idx, order = int(data[i][0:3]), int(data[i][3:6]), int(data[i][6:9])
+                line = data[i]
+                atom1_idx, atom2_idx, order = int(line[0:3]), int(line[3:6]), int(line[6:9])
                 bond_list.append(Bond(atom1_idx - 1, atom2_idx - 1, order))
 
             return atom_list, bond_list
