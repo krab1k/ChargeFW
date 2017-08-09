@@ -1,6 +1,6 @@
 import json
 import sys
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict
 from typing import List, Tuple, Dict
 
 import numpy as np
@@ -8,6 +8,23 @@ import numpy as np
 
 class ParameterError(Exception):
     pass
+
+
+class AtomParameterMeta:
+    @classmethod
+    def create_type(cls, parameter_names):
+        def __init__(self, *args):
+            self.__dict__ = OrderedDict.fromkeys(parameter_names)
+            if len(self.__dict__) != len(args):
+                raise ParameterError('Invalid number of arguments')
+            for attr, value in zip(self.__dict__.keys(), args):
+                self.__dict__[attr] = float(value)
+
+        def __repr__(self):
+            return 'AtomParameter({args})'.format(args=', '.join('{:.3f}'.format(v) for v in self.__dict__.values()))
+
+        d = {'parameter_names': parameter_names, '__init__': __init__, '__repr__': __repr__}
+        return type('AtomParameter', (), d)
 
 
 class Parameters:
@@ -103,7 +120,7 @@ class Parameters:
     def print_parameters(self):
         print('Common parameters:')
         for parameter in self.common:
-            print('{}: {}'.format(parameter, self.common[parameter]))
+            print('{}: {:.3}'.format(parameter, self.common[parameter]))
 
         print('Atom parameters:')
         for parameter in self.atom:
@@ -140,8 +157,8 @@ class CommonParameters:
 
 class AtomParameters:
     def __init__(self, parameter_names):
-        self._type: namedtuple = namedtuple('AtomParameter', ' '.join(parameter_names))
-        self._parameters: OrderedDict[Tuple[str, str, str], namedtuple] = OrderedDict()
+        self._type = AtomParameterMeta.create_type(parameter_names)
+        self._parameters: OrderedDict[Tuple[str, str, str]] = OrderedDict()
 
     def __iter__(self):
         return iter(self._parameters)
@@ -152,7 +169,7 @@ class AtomParameters:
     def __getitem__(self, item):
         def f(atom):
             try:
-                return getattr(self._parameters[atom.atom_type], item)
+                return self._parameters[atom.atom_type].__dict__[item]
             except AttributeError:
                 raise ParameterError('No parameter {} defined'.format(item))
             except KeyError:
@@ -176,5 +193,5 @@ class AtomParameters:
 
     @property
     def parameter_names(self):
-        # noinspection PyProtectedMember
-        return self._type._fields
+        # noinspection PyUnresolvedReferences
+        return self._type.parameter_names
