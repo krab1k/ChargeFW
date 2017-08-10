@@ -25,14 +25,13 @@ class ChargeMethod(ChargeMethodSkeleton):
         self.parameters.load_from_file(options['par_file'])
 
     def calculate_charges(self, molecule: Molecule):
+        np.seterr(divide='ignore')
 
         n = len(molecule.atoms)
         matrix = np.empty((n + 1, n + 1), dtype=np.float32)
         vector = np.empty(n + 1, dtype=np.float32)
 
-        with np.errstate(divide='ignore'):
-            matrix[:n, :n] = self.parameters.common['kappa'] / molecule.distance_matrix
-
+        matrix[:n, :n] = self.parameters.common['kappa'] / molecule.distance_matrix
         for i, atom_i in enumerate(molecule.atoms):
             matrix[i, i] = self.parameters.atom['B'](atom_i)
             vector[i] = - self.parameters.atom['A'](atom_i)
@@ -45,4 +44,4 @@ class ChargeMethod(ChargeMethodSkeleton):
         try:
             return np.linalg.solve(matrix, vector)[:-1]
         except np.linalg.LinAlgError:
-            return np.fromiter((np.nan for _ in range(len(molecule))), dtype=np.float32, count=len(molecule))
+            return np.full(len(molecule), np.nan, dtype=np.float32)
