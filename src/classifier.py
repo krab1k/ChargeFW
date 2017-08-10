@@ -48,12 +48,8 @@ class ParametersClassifier(Classifier):
         self._parameters = parameters
 
     def get_type(self, molecule: Molecule, atom: Atom):
-        for element, classifier, atom_type in self._parameters:
-            if element != atom.element.symbol:
-                continue
-
+        for classifier, atom_type in self._parameters.data[atom.element.symbol]:
             if classifiers[classifier].get_type(molecule, atom)[1] == atom_type:
                 return classifier, atom_type
 
-        else:
-            raise ParameterError('No parameter found for atom {}'.format(atom.element.symbol))
+        raise ParameterError('No parameter found for atom {}'.format(atom.element.symbol))

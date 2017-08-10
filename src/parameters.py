@@ -1,7 +1,7 @@
 import json
 import sys
-from collections import OrderedDict
-from typing import List, Tuple, Dict
+from collections import OrderedDict, defaultdict
+from typing import List, Tuple, Dict, Any
 
 import numpy as np
 
@@ -158,18 +158,21 @@ class CommonParameters:
 class AtomParameters:
     def __init__(self, parameter_names):
         self._type = AtomParameterMeta.create_type(parameter_names)
-        self._parameters: OrderedDict[Tuple[str, str, str]] = OrderedDict()
-
-    def __iter__(self):
-        return iter(self._parameters)
+        self._parameters: Dict[str, Dict[tuple, Any]] = defaultdict(OrderedDict)
 
     def __len__(self):
-        return len(self._parameters)
+        return sum(len(self._parameters[k]) for k in self._parameters)
+
+    def __iter__(self):
+        for element in self._parameters:
+            for classifier, atom_type in self._parameters[element]:
+                yield element, classifier, atom_type
 
     def __getitem__(self, item):
         def f(atom):
             try:
-                return self._parameters[atom.atom_type].__dict__[item]
+                element, classifier, atom_type = atom.atom_type
+                return self._parameters[element][(classifier, atom_type)].__dict__[item]
             except AttributeError:
                 raise ParameterError('No parameter {} defined'.format(item))
             except KeyError:
@@ -177,19 +180,32 @@ class AtomParameters:
 
         return f
 
+    @property
+    def data(self):
+        return self._parameters
+
     def add_parameter(self, element: str, classifier: str, atom_type: str, parameters):
-        if parameters in self:
+        if element in self and (classifier, atom_type) in self._parameters[element]:
             raise ParameterError('Parameter already defined')
 
-        self._parameters[(element, classifier, atom_type)] = self._type(*parameters)
+        self._parameters[element][(classifier, atom_type)] = self._type(*parameters)
 
     def update_values(self, values: np.ndarray):
         values_count = len(self.parameter_names)
-        for i, key in enumerate(self._parameters):
-            self._parameters[key] = self._type(*values[i * values_count: (i + 1) * values_count])
 
-    def parameter_values(self, parameter: Tuple[str, str, str]):
-        return self._parameters[parameter]
+        def update_one_type(symbol, subvalues: np.ndarray):
+            for i, key in enumerate(self._parameters[symbol]):
+                self._parameters[symbol][key] = self._type(*subvalues[i * values_count: (i + 1) * values_count])
+
+        start = 0
+        for element in self._parameters:
+            m = len(self._parameters[element])
+            update_one_type(element, values[start:start + m * values_count])
+            start += m * values_count
+
+    def parameter_values(self, parameter: Tuple):
+        element, classifier, atom_type = parameter
+        return self._parameters[element][(classifier, atom_type)]
 
     @property
     def parameter_names(self):
