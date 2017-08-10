@@ -118,7 +118,7 @@ class Molecule:
             for atom_no, charge in pairs:
                 charges[int(atom_no) - 1] = int(charge)
 
-            atom_list = [Atom(periodic_table[symbol], index, coords, charge)
+            atom_list = [Atom(periodic_table[symbol.capitalize()], index, coords, charge)
                          for symbol, index, coords, charge in zip(symbols, range(len(symbols)), coordinates, charges)]
 
             bond_list = []
