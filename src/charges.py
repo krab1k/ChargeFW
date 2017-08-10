@@ -34,7 +34,7 @@ class Charges:
             sys.exit(1)
 
         for key, value in data.items():
-            data[key] = np.array(value, dtype=np.float32)
+            data[key] = np.array(value, dtype=np.float_)
 
         return Charges(data)
 

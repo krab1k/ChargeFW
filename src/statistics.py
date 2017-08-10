@@ -57,8 +57,8 @@ def calculate_all_per_atom_type(molecules: MoleculeSet, ref_charges: Charges, ch
     for atom_type in molecules.atom_types:
         indices = molecules.atom_types[atom_type]
         n = len(indices)
-        x = np.empty(n, dtype=np.float32)
-        y = np.empty(n, dtype=np.float32)
+        x = np.empty(n, dtype=np.float_)
+        y = np.empty(n, dtype=np.float_)
 
         for idx, ij in enumerate(indices):
             i, j = ij

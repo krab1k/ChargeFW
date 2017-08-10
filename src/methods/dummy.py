@@ -11,4 +11,4 @@ class ChargeMethod(ChargeMethodSkeleton):
         pass
 
     def calculate_charges(self, molecule):
-        return np.fromiter((0.0 for _ in molecule), dtype=np.float32, count=len(molecule))
+        np.full(len(molecule), 0.0, dtype=np.float_)

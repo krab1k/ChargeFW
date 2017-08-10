@@ -28,8 +28,8 @@ class ChargeMethod(ChargeMethodSkeleton):
         np.seterr(divide='ignore')
 
         n = len(molecule.atoms)
-        matrix = np.empty((n + 1, n + 1), dtype=np.float32)
-        vector = np.empty(n + 1, dtype=np.float32)
+        matrix = np.empty((n + 1, n + 1), dtype=np.float_)
+        vector = np.empty(n + 1, dtype=np.float_)
 
         matrix[:n, :n] = self.parameters.common['kappa'] / molecule.distance_matrix
         for i, atom_i in enumerate(molecule.atoms):
@@ -44,4 +44,4 @@ class ChargeMethod(ChargeMethodSkeleton):
         try:
             return np.linalg.solve(matrix, vector)[:-1]
         except np.linalg.LinAlgError:
-            return np.full(len(molecule), np.nan, dtype=np.float32)
+            return np.full(len(molecule), np.nan, dtype=np.float_)

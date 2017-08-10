@@ -80,7 +80,7 @@ class Parameters:
             for parameter in self.common:
                 self.common[parameter] = np.random.uniform(*self._common_ranges[parameter])
 
-            packed = np.empty(len(self.atom) * len(self.atom.parameter_names), dtype=np.float32)
+            packed = np.empty(len(self.atom) * len(self.atom.parameter_names), dtype=np.float_)
             for i, parameter_name in enumerate(self.atom.parameter_names):
                 low, high = self._atom_ranges[parameter_name]
                 packed[i::len(self.atom.parameter_names)] = np.random.uniform(low, high, len(self.atom))
@@ -94,7 +94,7 @@ class Parameters:
         self._atom_ranges = atom_ranges
 
     def pack_values(self) -> np.ndarray:
-        packed = np.empty(self.size, dtype=np.float32)
+        packed = np.empty(self.size, dtype=np.float_)
         idx = 0
         for parameter in self.common:
             packed[idx] = self.common[parameter]

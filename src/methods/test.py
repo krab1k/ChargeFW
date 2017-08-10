@@ -16,4 +16,4 @@ class ChargeMethod(ChargeMethodSkeleton):
         self.parameters.load_from_file('../data/eem.json')
 
     def calculate_charges(self, molecule):
-        return np.fromiter((atom.formal_charge for atom in molecule), np.float32, len(molecule))
+        return np.fromiter((atom.formal_charge for atom in molecule), np.float_, len(molecule))
